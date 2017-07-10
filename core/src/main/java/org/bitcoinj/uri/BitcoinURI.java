@@ -1,6 +1,6 @@
 /*
  * Copyright 2012, 2014 the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -70,7 +70,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <li>{@code label} any URL encoded alphanumeric</li>
  * <li>{@code message} any URL encoded alphanumeric</li>
  * </ul>
- * 
+ *
  * @author Andreas Schildbach (initial code)
  * @author Jim Burton (enhancements for MultiBit)
  * @author Gary Rowe (BIP21 support)
@@ -90,7 +90,7 @@ public class BitcoinURI {
      * from network parameters.
      */
     @Deprecated
-    public static final String BITCOIN_SCHEME = "bitcoin";
+    public static final String BITCOIN_SCHEME = "bitcore";
     private static final String ENCODED_SPACE_CHARACTER = "%20";
     private static final String AMPERSAND_SEPARATOR = "&";
     private static final String QUESTION_MARK_SEPARATOR = "?";
@@ -134,13 +134,13 @@ public class BitcoinURI {
             throw new BitcoinURIParseException("Bad URI syntax", e);
         }
 
-        // URI is formed as  bitcoin:<address>?<query parameters>
+        // URI is formed as  bitcore:<address>?<query parameters>
         // blockchain.info generates URIs of non-BIP compliant form bitcoin://address?....
         // We support both until Ben fixes his code.
-        
+
         // Remove the bitcoin scheme.
         // (Note: getSchemeSpecificPart() is not used as it unescapes the label and parse then fails.
-        // For instance with : bitcoin:129mVqKUmJ9uwPxKJBnNdABbuaaNfho4Ha?amount=0.06&label=Tom%20%26%20Jerry
+        // For instance with : bitcore:129mVqKUmJ9uwPxKJBnNdABbuaaNfho4Ha?amount=0.06&label=Tom%20%26%20Jerry
         // the & (%26) in Tom and Jerry gets interpreted as a separator and the label then gets parsed
         // as 'Tom ' instead of 'Tom & Jerry')
         String blockchainInfoScheme = scheme + "://";
@@ -157,7 +157,7 @@ public class BitcoinURI {
         // Split off the address from the rest of the query parameters.
         String[] addressSplitTokens = schemeSpecificPart.split("\\?", 2);
         if (addressSplitTokens.length == 0)
-            throw new BitcoinURIParseException("No data found after the bitcoin: prefix");
+            throw new BitcoinURIParseException("No data found after the bitcore: prefix");
         String addressToken = addressSplitTokens[0];  // may be empty!
 
         String[] nameValuePairTokens;
@@ -242,7 +242,7 @@ public class BitcoinURI {
 
     /**
      * Put the value against the key in the map checking for duplication. This avoids address field overwrite etc.
-     * 
+     *
      * @param key The key for the map
      * @param value The value to store
      */
@@ -369,29 +369,29 @@ public class BitcoinURI {
         if (amount != null && amount.signum() < 0) {
             throw new IllegalArgumentException("Coin must be positive");
         }
-        
+
         StringBuilder builder = new StringBuilder();
         String scheme = params.getUriScheme();
         builder.append(scheme).append(":").append(address);
-        
+
         boolean questionMarkHasBeenOutput = false;
-        
+
         if (amount != null) {
             builder.append(QUESTION_MARK_SEPARATOR).append(FIELD_AMOUNT).append("=");
             builder.append(amount.toPlainString());
             questionMarkHasBeenOutput = true;
         }
-        
+
         if (label != null && !"".equals(label)) {
             if (questionMarkHasBeenOutput) {
                 builder.append(AMPERSAND_SEPARATOR);
             } else {
-                builder.append(QUESTION_MARK_SEPARATOR);                
+                builder.append(QUESTION_MARK_SEPARATOR);
                 questionMarkHasBeenOutput = true;
             }
             builder.append(FIELD_LABEL).append("=").append(encodeURLString(label));
         }
-        
+
         if (message != null && !"".equals(message)) {
             if (questionMarkHasBeenOutput) {
                 builder.append(AMPERSAND_SEPARATOR);
@@ -400,13 +400,13 @@ public class BitcoinURI {
             }
             builder.append(FIELD_MESSAGE).append("=").append(encodeURLString(message));
         }
-        
+
         return builder.toString();
     }
 
     /**
      * Encode a string using URL encoding
-     * 
+     *
      * @param stringToEncode The string to URL encode
      */
     static String encodeURLString(String stringToEncode) {

@@ -36,7 +36,7 @@ import org.bitcoinj.core.Monetary;
  * <p>
  * Utility for formatting and parsing coin values to and from human readable form.
  * </p>
- * 
+ *
  * <p>
  * MonetaryFormat instances are immutable. Invoking a configuration method has no effect on the receiving instance; you
  * must store and use the new instance it returns, instead. Instances are thread safe, so they may be stored safely as
@@ -54,11 +54,11 @@ public final class MonetaryFormat {
     /** Standard format for fiat amounts. */
     public static final MonetaryFormat FIAT = new MonetaryFormat().shift(0).minDecimals(2).repeatOptionalDecimals(2, 1);
     /** Currency code for base 1 Bitcoin. */
-    public static final String CODE_BTC = "BTC";
+    public static final String CODE_BTC = "BTX";
     /** Currency code for base 1/1000 Bitcoin. */
-    public static final String CODE_MBTC = "mBTC";
+    public static final String CODE_MBTC = "mBTX";
     /** Currency code for base 1/1000000 Bitcoin. */
-    public static final String CODE_UBTC = "µBTC";
+    public static final String CODE_UBTC = "µBTX";
 
     public static final int MAX_DECIMALS = 8;
 
@@ -147,12 +147,12 @@ public final class MonetaryFormat {
      * Each value is a number of decimals in that group. If the value precision exceeds all decimals specified
      * (including minimum decimals), the value will be rounded. This configuration is not relevant for parsing.
      * </p>
-     * 
+     *
      * <p>
      * For example, if you pass <tt>4,2</tt> it will add four decimals to your formatted string if needed, and then add
      * another two decimals if needed. At this point, rather than adding further decimals the value will be rounded.
      * </p>
-     * 
+     *
      * @param groups
      *            any number numbers of decimals, one for each group
      */
@@ -170,12 +170,12 @@ public final class MonetaryFormat {
      * precision. If the value precision exceeds all decimals specified (including minimum decimals), the value will be
      * rounded. This configuration is not relevant for parsing.
      * </p>
-     * 
+     *
      * <p>
      * For example, if you pass <tt>1,8</tt> it will up to eight decimals to your formatted string if needed. After
      * these have been used up, rather than adding further decimals the value will be rounded.
      * </p>
-     * 
+     *
      * @param decimals
      *            value of the group to be repeated
      * @param repetitions
@@ -226,7 +226,7 @@ public final class MonetaryFormat {
 
     /**
      * Configure currency code for given decimal separator shift. This configuration is not relevant for parsing.
-     * 
+     *
      * @param codeShift
      *            decimal separator shift, see {@link #shift}
      * @param code
@@ -394,7 +394,7 @@ public final class MonetaryFormat {
 
     /**
      * Parse a human readable coin value to a {@link org.bitcoinj.core.Coin} instance.
-     * 
+     *
      * @throws NumberFormatException
      *             if the string cannot be parsed for some reason
      */
@@ -404,7 +404,7 @@ public final class MonetaryFormat {
 
     /**
      * Parse a human readable fiat value to a {@link org.bitcoinj.utils.Fiat} instance.
-     * 
+     *
      * @throws NumberFormatException
      *             if the string cannot be parsed for some reason
      */

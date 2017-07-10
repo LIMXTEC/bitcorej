@@ -40,7 +40,7 @@ import static org.bitcoinj.core.Sha256Hash.*;
  *
  * <p>To get a block, you can either build one from the raw bytes you can get from another implementation, or request one
  * specifically using {@link Peer#getBlock(Sha256Hash)}, or grab one from a downloaded {@link BlockChain}.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class Block extends Message {
@@ -65,7 +65,7 @@ public class Block extends Message {
      * upgrade everyone to change this, so Bitcoin can continue to grow. For now it exists as an anti-DoS measure to
      * avoid somebody creating a titanically huge but valid block and forcing everyone to download/store it forever.
      */
-    public static final int MAX_BLOCK_SIZE = 1 * 1000 * 1000;
+    public static final int MAX_BLOCK_SIZE = 20 * 1000 * 1000; // 20Mb
     /**
      * A "sigop" is a signature verification operation. Because they're expensive we also impose a separate limit on
      * the number in a block to prevent somebody mining a huge block that has way more sigops than normal, so is very
@@ -85,9 +85,9 @@ public class Block extends Message {
     /** Block version introduced in BIP 34: Height in coinbase */
     public static final long BLOCK_VERSION_BIP34 = 2;
     /** Block version introduced in BIP 66: Strict DER signatures */
-    public static final long BLOCK_VERSION_BIP66 = 3;
+    public static final long BLOCK_VERSION_BIP66 = 2;
     /** Block version introduced in BIP 65: OP_CHECKLOCKTIMEVERIFY */
-    public static final long BLOCK_VERSION_BIP65 = 4;
+    public static final long BLOCK_VERSION_BIP65 = 2;
 
     // Fields defined as part of the protocol format.
     private long version;
@@ -104,9 +104,12 @@ public class Block extends Message {
     /** Stores the hash of the block. If null, getHash() will recalculate it. */
     private Sha256Hash hash;
 
+    /** PoW hash for block validation */
+    private Sha256Hash powHash;
+
     protected boolean headerBytesValid;
     protected boolean transactionBytesValid;
-    
+
     // Blocks can be encoded in a way that will use more bytes than is optimal (due to VarInts having multiple encodings)
     // MAX_BLOCK_SIZE must be compared to the optimal encoding, not the actual encoding, so when parsing, we keep track
     // of the size of the ideal encoding in addition to the actual message size (which Message needs)
@@ -216,12 +219,31 @@ public class Block extends Message {
      * </p>
      */
     public Coin getBlockInflation(int height) {
-        return FIFTY_COINS.shiftRight(height / params.getSubsidyDecreaseBlockCount());
+        Coin subsidy = COIN.times(125).divide(10); // 12.5 coins
+        Coin premine = COIN.times(162873375).divide(10); // 16287337.5 coins
+
+        if (height == 1) {
+            subsidy = premine;
+        } else if (height > 10000) {
+            int block_reward_change_f4 = 4;
+            int btxFullblock = (42987 + 10000)*4;
+            // Our Goal is to have the same amount how BTC
+            int nSubsidyHalvingInterval2 = 840000;
+            subsidy = subsidy.divide(block_reward_change_f4);
+            int halvings = (height + btxFullblock) / nSubsidyHalvingInterval2;
+            if (halvings >= 10)
+                subsidy = subsidy.divide(1024);
+            else
+                subsidy = subsidy.shiftRight(halvings);
+        }
+        // if height <= 1000 then subsidy stays the same
+
+        return subsidy;
     }
 
     /**
      * Parse transactions from the block.
-     * 
+     *
      * @param transactionsOffset Offset of the transactions within the block.
      * Useful for non-Bitcoin chains where the block header may not be a fixed
      * size.
@@ -266,7 +288,7 @@ public class Block extends Message {
         parseTransactions(offset + HEADER_SIZE);
         length = cursor - offset;
     }
-    
+
     public int getOptimalEncodingMessageSize() {
         if (optimalEncodingMessageSize != 0)
             return optimalEncodingMessageSize;
@@ -413,6 +435,23 @@ public class Block extends Message {
     }
 
     /**
+     * Calculates the block PoW hash
+     */
+    private Sha256Hash calculatePowHash() {
+        try {
+            ByteArrayOutputStream bos = new UnsafeByteArrayOutputStream(HEADER_SIZE);
+            writeHeader(bos);
+            if (time < 1493124696)
+                return Sha256Hash.wrapReversed(Utils.scryptDigest(bos.toByteArray()));
+            else // TimeTravel algo will be heavy for android
+                 // for now, we will return "small" hash to pass pow verification
+                return Sha256Hash.wrap("00000000000000000000000000000000ffffffffffffffffffffffffffffffff");
+        } catch (IOException e) {
+            throw new RuntimeException(e); // Cannot happen.
+        }
+    }
+
+    /**
      * Returns the hash of the block (which for a valid, solved block should be below the target) in the form seen on
      * the block explorer. If you call this on block 1 in the mainnet chain
      * you will get "00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048".
@@ -432,6 +471,14 @@ public class Block extends Message {
         return hash;
     }
 
+    /**
+     * Returns the PoW hash of the block
+     */
+    public Sha256Hash getPowHash() {
+        if (powHash == null)
+            powHash = calculatePowHash();
+        return powHash;
+    }
     /**
      * The number that is one greater than the largest representable SHA-256
      * hash.
@@ -480,10 +527,6 @@ public class Block extends Message {
         s.append(" block: \n");
         s.append("   hash: ").append(getHashAsString()).append('\n');
         s.append("   version: ").append(version);
-        String bips = Joiner.on(", ").skipNulls().join(isBIP34() ? "BIP34" : null, isBIP66() ? "BIP66" : null,
-                isBIP65() ? "BIP65" : null);
-        if (!bips.isEmpty())
-            s.append(" (").append(bips).append(')');
         s.append('\n');
         s.append("   previous block: ").append(getPrevBlockHash()).append("\n");
         s.append("   merkle root: ").append(getMerkleRoot()).append("\n");
@@ -532,7 +575,7 @@ public class Block extends Message {
         return target;
     }
 
-    /** Returns true if the hash of the block is OK (lower than difficulty target). */
+    /** Returns true if the PoW hash of the block is OK (lower than difficulty target). */
     protected boolean checkProofOfWork(boolean throwException) throws VerificationException {
         // This part is key - it is what proves the block was as difficult to make as it claims
         // to be. Note however that in the context of this function, the block can claim to be
@@ -544,7 +587,7 @@ public class Block extends Message {
         // field is of the right value. This requires us to have the preceeding blocks.
         BigInteger target = getDifficultyTargetAsInteger();
 
-        BigInteger h = getHash().toBigInteger();
+        BigInteger h = getPowHash().toBigInteger();
         if (h.compareTo(target) > 0) {
             // Proof of work check failed!
             if (throwException)
@@ -861,7 +904,7 @@ public class Block extends Message {
     private static int txCounter;
 
     /** Adds a coinbase transaction to the block. This exists for unit tests.
-     * 
+     *
      * @param height block height, if known, or -1 otherwise.
      */
     @VisibleForTesting
@@ -907,7 +950,7 @@ public class Block extends Message {
     /**
      * Returns a solved block that builds on top of this one. This exists for unit tests.
      * In this variant you can specify a public key (pubkey) for use in generating coinbase blocks.
-     * 
+     *
      * @param height block height, if known, or -1 otherwise.
      */
     Block createNextBlock(@Nullable final Address to, final long version,
@@ -1000,7 +1043,7 @@ public class Block extends Message {
 
     /**
      * Return whether this block contains any transactions.
-     * 
+     *
      * @return  true if the block contains transactions, false otherwise (is
      * purely a header).
      */

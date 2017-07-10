@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?scenebuilder-classpath-element ../../../../target/classes?>
-<?scenebuilder-classpath-element ../../../../../core/target/bitcoinj-0.12-SNAPSHOT.jar?>
+<?scenebuilder-classpath-element ../../../../../core/target/bitcore-1.0.jar?>
 <?import java.lang.*?>
 <?import java.util.*?>
 <?import javafx.geometry.*?>
@@ -31,7 +31,7 @@
             <Color blue="0.750" green="0.750" red="0.750" fx:id="x2" />
           </textFill>
         </Label>
-        <Label font="$x1" text="BTC" textFill="$x2" />
+        <Label font="$x1" text="BTX" textFill="$x2" />
       </children>
     </HBox>
     <HBox fx:id="controlsBox" alignment="TOP_LEFT" fillHeight="true" layoutX="14.0" layoutY="347.0" minHeight="16.0" prefHeight="36.0" prefWidth="243.0" spacing="10.0" translateY="60.0" visible="true" AnchorPane.bottomAnchor="17.0">
