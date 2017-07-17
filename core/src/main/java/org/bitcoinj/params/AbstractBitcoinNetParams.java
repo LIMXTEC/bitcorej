@@ -95,9 +95,8 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
             for (int i = 0; i < interval; i++) {
                 cursor = blockStore.get(hash);
                 if (cursor == null) {
-                    // This should never happen. If it does, it means we are following an incorrect or busted chain.
-                    throw new VerificationException(
-                            "Difficulty transition point but we did not find a way back to the last transition point. Not found: " + hash);
+                    // we my have no enough blocks here
+                    return;
                 }
                 hash = cursor.getHeader().getPrevBlockHash();
             }
