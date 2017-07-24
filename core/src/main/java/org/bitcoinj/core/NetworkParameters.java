@@ -78,7 +78,9 @@ public abstract class NetworkParameters {
     protected int p2shHeader;
     protected int dumpedPrivateKeyHeader;
     protected int interval;
+    protected int interval2;
     protected int targetTimespan;
+    protected int targetTimespan2;
     protected byte[] alertSigningKey;
     protected int bip32HeaderPub;
     protected int bip32HeaderPriv;
@@ -138,6 +140,9 @@ public abstract class NetworkParameters {
     public static final int TARGET_TIMESPAN = 84 * 60 * 60; // = 3.5 * 24 * 60 * 60;  // 3 day
     public static final int TARGET_SPACING = 150; // = 2.5 * 60;
     public static final int INTERVAL = TARGET_TIMESPAN / TARGET_SPACING;
+
+    public static final int TARGET_TIMESPAN2 = 160 * 60;
+    public static final int INTERVAL2 = TARGET_TIMESPAN2 / TARGET_SPACING;
 
     /**
      * Blocks with a timestamp after this should enforce BIP 16, aka "Pay to script hash". This BIP changed the
@@ -346,6 +351,10 @@ public abstract class NetworkParameters {
         return targetTimespan;
     }
 
+    public int getTargetTimespan2() {
+        return targetTimespan2;
+    }
+
     /**
      * The version codes that prefix addresses which are acceptable on this network. Although Satoshi intended these to
      * be used for "versioning", in fact they are today used to discriminate what kind of data is contained in the
@@ -365,6 +374,10 @@ public abstract class NetworkParameters {
     /** How many blocks pass between difficulty adjustment periods. Bitcoin standardises this to be 2016. */
     public int getInterval() {
         return interval;
+    }
+
+    public int getInterval2() {
+        return interval2;
     }
 
     /** Maximum target represents the easiest allowable proof of work. */

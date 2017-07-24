@@ -54,6 +54,9 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
     private static final Logger log = LoggerFactory.getLogger(AbstractBitcoinNetParams.class);
 
     private static final BigInteger MASK256BIT = new BigInteger("00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
+    private static final int FORK1_HEIGHT = 10000;
+    private static final int FORK2_HEIGHT = 21000;
+
 
     public AbstractBitcoinNetParams() {
         super();
@@ -65,13 +68,16 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
      * @return If this is a difficulty transition point
      */
     public final boolean isDifficultyTransitionPoint(final int height) {
-        return ((height + 1) % this.getInterval()) == 0;
+        if (height > FORK2_HEIGHT)
+            return ((height + 1) % this.getInterval2()) == 0;
+        else
+            return ((height + 1) % this.getInterval()) == 0;
     }
 
     @Override
     public void checkDifficultyTransitions(final StoredBlock storedPrev, final Block nextBlock,
     	final BlockStore blockStore) throws VerificationException, BlockStoreException {
-        if ((storedPrev.getHeight()+1) <= 10000) {
+        if ((storedPrev.getHeight()+1) <= FORK1_HEIGHT) {
             DUAL_KGW3(storedPrev, nextBlock, blockStore);
         } else {
             final Block prev = storedPrev.getHeader();
@@ -91,7 +97,12 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
             // two weeks after the initial block chain download.
             Sha256Hash hash = prev.getHash();
             StoredBlock cursor = null;
-            final int interval = this.getInterval()+1;
+            int interval = 0;
+            if (storedPrev.getHeight() > FORK2_HEIGHT)
+                interval = this.getInterval2()+1;
+            else
+                interval = this.getInterval()+1;
+
             for (int i = 0; i < interval; i++) {
                 cursor = blockStore.get(hash);
                 if (cursor == null) {
@@ -104,11 +115,20 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
             Block blockIntervalAgo = cursor.getHeader();
             int timespan = (int) (prev.getTimeSeconds() - blockIntervalAgo.getTimeSeconds());
             // Limit the adjustment step.
-            final int targetTimespan = this.getTargetTimespan();
-            if (timespan < targetTimespan / 4)
-                timespan = targetTimespan / 4;
-            if (timespan > targetTimespan * 4)
-                timespan = targetTimespan * 4;
+            int targetTimespan = 0;
+            double factor = 0.0;
+            if (storedPrev.getHeight() > FORK2_HEIGHT) {
+                targetTimespan = this.getTargetTimespan2();
+                factor = 1.15;
+            } else {
+                targetTimespan = this.getTargetTimespan();
+                factor = 4.0;
+            }
+
+            if (timespan < (int)((double)targetTimespan / factor))
+                timespan = (int)((double)targetTimespan / factor );
+            if (timespan > (int)((double)targetTimespan * factor))
+                timespan = (int)((double)targetTimespan * factor );
 
             BigInteger newTarget = Utils.decodeCompactBits(prev.getDifficultyTarget());
             newTarget = newTarget.multiply(BigInteger.valueOf(timespan));
